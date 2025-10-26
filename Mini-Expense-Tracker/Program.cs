@@ -15,26 +15,18 @@ namespace Mini_Expense_Tracker
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            string connectionString;
-            var home = Environment.GetEnvironmentVariable("HOME");
-            if (!string.IsNullOrEmpty(home))
-            {
-                var dataDir = Path.Combine(home, "data");
-                Directory.CreateDirectory(dataDir);
-                var dbPath = Path.Combine(dataDir, "expenses.db");// /home/data  (persistent)
-                connectionString = $"Data Source={dbPath}";
-            }
-            else
-            {
-                // local dev fallback: project folder "App_Data"
-                connectionString = builder.Configuration.GetConnectionString("Default")!;
-            }
+            var home = Environment.GetEnvironmentVariable("HOME")
+                       ?? Directory.GetCurrentDirectory();
+
+            var dataDir = Path.Combine(home, "data");
+            Directory.CreateDirectory(dataDir);
+            var dbPath = Path.Combine(dataDir, "expenses.sqlite");
             
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite(connectionString));
+            builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite($"Data Source={dbPath}"
+            ));
             builder.Services.AddScoped<IBudgetRule>(sp =>
     new MonthlyBudgetRule(sp.GetRequiredService<IExpenseReader>(), monthlyLimit: 500m));
             builder.Services.AddScoped<IExpenseReader, EfExpenseRepository>();
@@ -44,7 +36,6 @@ namespace Mini_Expense_Tracker
             builder.Services.AddScoped<IExpenseService, ExpenseService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
 
-            builder.Services.AddScoped<IBudgetRule, MonthlyBudgetRule>();
             builder.Services.AddScoped<IExporter, CsvExporter>();
             builder.Services.AddScoped<IExporter, JsonExporter>();
 
@@ -53,9 +44,22 @@ namespace Mini_Expense_Tracker
             builder.Services.AddScoped<INotificationService, InAppNotificationService>();
 
             var app = builder.Build();
+            using (var scope = app.Services.CreateScope())
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                try
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.Database.Migrate();
+                    logger.LogInformation("SQLite migrate OK at {Path}", dbPath);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "SQLite migrate FAILED at {Path}", dbPath);
+                }
+            }
 
 
-            
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
