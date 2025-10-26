@@ -1,0 +1,44 @@
+﻿@model IReadOnlyList<Mini_Expense_Tracker.Models.Expense>
+<h1>Expenses Page</h1>
+
+<p> <a asp-action="Create">Create new Expense</a></p>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">No expenses found.</div>
+}
+else
+{
+    <table class="table table-striped table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Note</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var expense in Model)
+            {
+                <tr>
+                    <td>@expense.When.ToShortDateString()</td>
+                    <td>@expense.Description</td>
+                    <td>@expense.Category.Name</td>
+                    <td>@expense.Amount.ToString("C")</td>
+                    <td>@expense.Note</td>
+                    <td>
+                        <form asp-action="Delete" asp-route-id="@expense.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this expense?');">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+        
+
+
+    </table>
+}

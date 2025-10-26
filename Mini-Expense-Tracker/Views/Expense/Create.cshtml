@@ -1,0 +1,31 @@
+﻿@model Mini_Expense_Tracker.Models.ViewModels.ExpenseInput
+<h1>Add Expense</h1>
+
+<form asp-action="Create" method="post">
+    <div>
+        <label asp-for="When"></label>
+        <input asp-for="When" class="form-control" type="date" />
+    </div>
+    <div>
+        <label asp-for="Description"></label>
+        <input asp-for="Description" class="form-control" />
+    </div>
+    <div>
+        <label asp-for="Amount"></label>
+        <input asp-for="Amount" class="form-control" />
+    </div>
+    <div>
+        <label asp-for="CategoryId">Category</label>
+        <select asp-for="CategoryId" asp-items="@(new SelectList(Model.Categories, "Id", "Name"))" class="form-select">
+            <option value="">-- Select Category --</option>
+        </select>
+    </div>
+
+    <div>
+        <label asp-for="Note"></label>
+        <textarea asp-for="Note" class="form-control"></textarea>
+    </div>
+
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>
